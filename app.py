@@ -44,6 +44,7 @@ NAV_ITEMS = [
     ("/diagnostics", "Diagnostics"),
     ("/reference-queue", "Reference Queue"),
     ("/analysis-review", "Analysis Review"),
+    ("/recreation-lab", "Roblox Recreation Lab"),
 ]
 
 
@@ -647,7 +648,13 @@ register_analysis_review_routes(
     page,
     esc,
 )
+from radar.recreation_web import register_recreation_routes
 
+register_recreation_routes(
+    app,
+    page,
+    esc,
+)
 if __name__ == "__main__":
     from radar.channel_feedback import start_background_sync
     start_background_sync()
