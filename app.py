@@ -53,6 +53,7 @@ NAV_ITEMS = [
     ("/roblox-brain", "Roblox Brain"),
     ("/scene-builder", "Roblox Scene Builder"),
     ("/scene-builder-plugin", "Roblox Studio Installer"),
+    ("/short-producer", "🎥 Short Producer MVP"),
 ]
 
 
@@ -708,6 +709,15 @@ register_scene_builder_plugin_routes(
     page,
     esc,
 )
+
+from radar.short_producer_web import register_short_producer_routes
+
+register_short_producer_routes(
+    app,
+    page,
+    esc,
+)
+
 if __name__ == "__main__":
     from radar.channel_feedback import start_background_sync
     start_background_sync()
