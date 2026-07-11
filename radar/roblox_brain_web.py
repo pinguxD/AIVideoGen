@@ -55,7 +55,7 @@ def register_roblox_brain_routes(app, page, esc) -> None:
         return page(
             "Roblox Brain",
             f"""
-            <h1>Roblox Brain - Part 2</h1>
+            <h1>Video Blueprint - Part 2A</h1>
             <div class="card">
               <p>
                 Understands multiple gameplay actions, their roles and timing,
@@ -148,9 +148,28 @@ def register_roblox_brain_routes(app, page, esc) -> None:
             f"<tr><td>{esc(item.get('phase', ''))}</td><td>{esc(item.get('name', ''))}</td><td>{esc(item.get('command', ''))}</td><td>{esc(item.get('builder_id', ''))}</td><td><code>{esc(json.dumps(item, ensure_ascii=False))}</code></td></tr>"
             for item in plan.execution_loops
         )
+        retention_scores = plan.retention_blueprint.get("scores", {})
+        retention_rows = "".join(
+            f"<tr><td>{esc(name.replace('_', ' ').title())}</td><td>{esc(score)}/100</td></tr>"
+            for name, score in retention_scores.items()
+        )
+        retention_drivers = "<br>".join(
+            f"✓ {esc(item)}" for item in plan.retention_blueprint.get("drivers", [])
+        ) or "No clear retention drivers detected."
+        quality_components = "".join(
+            f"<tr><td>{esc(name.replace('_', ' ').title())}</td><td>{esc(score)}%</td></tr>"
+            for name, score in plan.recreation_quality.get("components", {}).items()
+        )
+        quality_limitations = "<br>".join(
+            esc(item) for item in plan.recreation_quality.get("limitations", [])
+        ) or "No major limitations detected."
+        instruction_rows = "".join(
+            f"<tr><td>{esc(item.get('step', ''))}</td><td>{esc(item.get('title', ''))}</td><td>{esc(item.get('instruction', ''))}</td><td>{esc(item.get('builder_id', ''))}</td></tr>"
+            for item in plan.build_instructions
+        )
 
         body = f"""
-        <h1>Roblox Brain result</h1>
+        <h1>Video Blueprint — Part 2A complete</h1>
 
         <div class="grid">
           <div class="card">
@@ -256,6 +275,37 @@ def register_roblox_brain_routes(app, page, esc) -> None:
           <p><b>What is it?</b> {esc(plan.scene.value)} with {esc(plan.core_mechanic.value)}</p>
           <p><b>How is it made?</b> {esc(plan.camera_pattern.get("base", "unknown"))}, {esc(plan.editing_pattern.get("pacing", "unknown"))} editing, {esc(plan.audio_pattern.get("dominant_pattern", "none"))} audio pattern.</p>
           <p><b>Can it be built?</b> {esc(plan.generation_mode)} · {esc(plan.complexity)} complexity.</p>
+        </div>
+
+        <div class="card">
+          <h2>Retention Blueprint</h2>
+          <div class="score">{esc(plan.retention_blueprint.get("overall_score", 0))}/100</div>
+          <p>{esc(plan.retention_blueprint.get("summary", ""))}</p>
+          <table>
+            <thead><tr><th>Retention factor</th><th>Score</th></tr></thead>
+            <tbody>{retention_rows}</tbody>
+          </table>
+          <p><b>Retention drivers:</b><br>{retention_drivers}</p>
+        </div>
+
+        <div class="card">
+          <h2>Predicted recreation quality</h2>
+          <div class="score">{esc(plan.recreation_quality.get("score", 0))}%</div>
+          <p><b>Rating:</b> {esc(plan.recreation_quality.get("label", "Unknown"))}</p>
+          <p>{esc(plan.recreation_quality.get("summary", ""))}</p>
+          <table>
+            <thead><tr><th>Component</th><th>Confidence</th></tr></thead>
+            <tbody>{quality_components}</tbody>
+          </table>
+          <p><b>Current limitations:</b><br>{quality_limitations}</p>
+        </div>
+
+        <div class="card">
+          <h2>Part 3 build instruction manual</h2>
+          <table>
+            <thead><tr><th>Step</th><th>Title</th><th>Instruction</th><th>Builder</th></tr></thead>
+            <tbody>{instruction_rows}</tbody>
+          </table>
         </div>
 
         <div class="card">

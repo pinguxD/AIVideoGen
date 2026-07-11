@@ -211,6 +211,9 @@ class RobloxBrainPlan:
     why_it_works: list[dict[str, Any]]
     recreation_difficulty: dict[str, Any]
     execution_loops: list[dict[str, Any]]
+    retention_blueprint: dict[str, Any]
+    recreation_quality: dict[str, Any]
+    build_instructions: list[dict[str, Any]]
     duration: float
     avatar_count: int
     lighting: str
@@ -594,12 +597,22 @@ def _camera_events(
 
 def _editing_events(decomposition: dict[str, Any]) -> list[TimelineEvent]:
     events: list[TimelineEvent] = []
+    camera_only_tokens = (
+        "whip_pan",
+        "camera_pan",
+        "camera_orbit",
+        "camera_push",
+        "zoom_pulse",
+    )
     for item in decomposition.get("transitions") or []:
         kind = str(
             item.get("kind")
             or item.get("transition_type")
             or "transition"
         )
+        # Camera movement belongs to Camera Style, not Editing Style.
+        if any(token in kind for token in camera_only_tokens):
+            continue
         events.append(
             TimelineEvent(
                 time=round(float(item.get("time") or 0), 3),
@@ -936,6 +949,216 @@ def _build_execution_loops(action_timeline, camera_pattern, editing_pattern, aud
         loops.append({"phase": "ui", "name": "persistent_ui", "command": "show_ui", "builder_id": "ui.persistent_group.v1", "elements": [item.value for item in visible_ui]})
     return loops
 
+
+def _clamp_score(value: float) -> int:
+    return max(0, min(100, int(round(value))))
+
+
+def _retention_blueprint(
+    core: BrainChoice,
+    state_actions: list[BrainChoice],
+    ui: list[BrainChoice],
+    camera_pattern: dict[str, Any],
+    editing_pattern: dict[str, Any],
+    action_timeline: list[TimelineAction],
+    duration: float,
+) -> dict[str, Any]:
+    visible_ui = [item for item in ui if item.value != "none"]
+    transformation = core.value in {
+        "grow", "shrink", "reveal_object", "spawn_object"
+    }
+    camera_rate = int(camera_pattern.get("occurrences") or 0) / max(duration, 0.1)
+    editing_rate = int(editing_pattern.get("occurrences") or 0) / max(duration, 0.1)
+
+    scores = {
+        "hook": 72 + (10 if transformation else 0) + (6 if visible_ui else 0),
+        "progression": 58 + (30 if transformation else 0) + min(12, len(action_timeline) * 3),
+        "visual_novelty": 55 + min(25, int((camera_rate + editing_rate) * 18)) + (8 if visible_ui else 0),
+        "constant_motion": 42 + (38 if state_actions else 0) + min(15, int(camera_rate * 12)),
+        "clarity": 62 + (18 if visible_ui else 0) + (10 if transformation else 0),
+        "reward": 55 + (28 if transformation else 0),
+        "loopability": 58 + (12 if state_actions else 0) + (8 if core.value in {"grow", "walk", "chase"} else 0),
+        "pacing": 50 + min(40, int((camera_rate + editing_rate) * 22)),
+    }
+    scores = {key: _clamp_score(value) for key, value in scores.items()}
+    overall = _clamp_score(sum(scores.values()) / len(scores))
+
+    drivers = []
+    if transformation:
+        drivers.append("clear before-to-after progression")
+    if state_actions:
+        drivers.append("continuous character motion")
+    if visible_ui:
+        drivers.append("UI makes the mechanic immediately readable")
+    if camera_rate >= 0.45:
+        drivers.append("frequent camera attention resets")
+    if editing_rate >= 0.35:
+        drivers.append("fast visual pacing")
+    if not drivers:
+        drivers.append("simple concept that is easy to understand")
+
+    weakest = min(scores, key=scores.get)
+    strongest = max(scores, key=scores.get)
+    return {
+        "overall_score": overall,
+        "scores": scores,
+        "strongest_driver": strongest,
+        "weakest_driver": weakest,
+        "drivers": drivers,
+        "summary": (
+            f"Retention is mainly driven by {strongest.replace('_', ' ')}; "
+            f"the weakest area is {weakest.replace('_', ' ')}."
+        ),
+    }
+
+
+def _recreation_quality(
+    scene: BrainChoice,
+    core: BrainChoice,
+    camera: BrainChoice,
+    ui: list[BrainChoice],
+    audio_pattern: dict[str, Any],
+    procedural: bool,
+    required_assets: list[str],
+) -> dict[str, Any]:
+    visible_ui = [item for item in ui if item.value != "none"]
+    audio_known = str(audio_pattern.get("dominant_pattern") or "none") not in {
+        "none", "unknown_effect"
+    }
+    components = {
+        "scene_understanding": scene.confidence,
+        "gameplay_understanding": core.confidence,
+        "camera_understanding": camera.confidence,
+        "ui_understanding": (
+            int(round(sum(item.confidence for item in visible_ui) / len(visible_ui)))
+            if visible_ui else 70
+        ),
+        "audio_understanding": 82 if audio_known else 48,
+        "procedural_feasibility": 96 if procedural and not required_assets else 58,
+    }
+    weights = {
+        "scene_understanding": 0.18,
+        "gameplay_understanding": 0.25,
+        "camera_understanding": 0.15,
+        "ui_understanding": 0.12,
+        "audio_understanding": 0.10,
+        "procedural_feasibility": 0.20,
+    }
+    overall = _clamp_score(sum(components[key] * weights[key] for key in components))
+    label = (
+        "Excellent" if overall >= 90 else
+        "High" if overall >= 80 else
+        "Moderate" if overall >= 65 else
+        "Low"
+    )
+    limitations = []
+    if not audio_known:
+        limitations.append("exact sound effects are not fully identified")
+    if required_assets:
+        limitations.extend(required_assets)
+    if core.confidence < 75:
+        limitations.append("gameplay action confidence is limited")
+    return {
+        "score": overall,
+        "label": label,
+        "components": components,
+        "limitations": limitations,
+        "summary": f"Predicted recreation fidelity: {overall}% ({label}).",
+    }
+
+
+def _build_instruction_manual(
+    environment_graph: dict[str, Any],
+    character_state: dict[str, Any],
+    action_timeline: list[TimelineAction],
+    ui: list[BrainChoice],
+    camera_pattern: dict[str, Any],
+    editing_pattern: dict[str, Any],
+    audio_pattern: dict[str, Any],
+) -> list[dict[str, Any]]:
+    instructions = [
+        {
+            "step": 1,
+            "title": "Build environment",
+            "instruction": (
+                f"Create {environment_graph.get('scene_type', 'scene')} with: "
+                + ", ".join(environment_graph.get("nodes") or [])
+            ),
+            "builder_id": f"scene.{environment_graph.get('scene_type', 'simple_platform')}.v1",
+        },
+        {
+            "step": 2,
+            "title": "Spawn character",
+            "instruction": (
+                f"Spawn {character_state.get('rig', 'R15')} avatar at "
+                f"{character_state.get('scale', 1)}x scale, facing "
+                f"{character_state.get('facing', 'forward')}."
+            ),
+            "builder_id": "character.spawn_r15.v1",
+        },
+    ]
+    step = 3
+    for action in action_timeline:
+        detail = action.action
+        if action.properties:
+            detail += " with " + ", ".join(
+                f"{key}={value}" for key, value in action.properties.items()
+            )
+        instructions.append({
+            "step": step,
+            "title": action.action.replace("_", " ").title(),
+            "instruction": f"From {action.start}s to {action.end}s: {detail}.",
+            "builder_id": action.builder_id,
+        })
+        step += 1
+
+    visible_ui = [item for item in ui if item.value != "none"]
+    if visible_ui:
+        instructions.append({
+            "step": step,
+            "title": "Create UI",
+            "instruction": "Add " + ", ".join(item.value for item in visible_ui) + ".",
+            "builder_id": "ui.persistent_group.v1",
+        })
+        step += 1
+
+    if int(camera_pattern.get("occurrences") or 0) > 0:
+        instructions.append({
+            "step": step,
+            "title": "Apply camera rhythm",
+            "instruction": (
+                f"Use {camera_pattern.get('base')} and repeat "
+                f"{camera_pattern.get('dominant_pattern')} about every "
+                f"{camera_pattern.get('average_interval')}s."
+            ),
+            "builder_id": "camera.pattern_loop.v1",
+        })
+        step += 1
+
+    if int(editing_pattern.get("occurrences") or 0) > 0:
+        instructions.append({
+            "step": step,
+            "title": "Apply editing rhythm",
+            "instruction": (
+                f"Use {editing_pattern.get('dominant_pattern')} as the main edit, "
+                f"with {editing_pattern.get('pacing')} pacing."
+            ),
+            "builder_id": "edit.pattern_loop.v1",
+        })
+        step += 1
+
+    if int(audio_pattern.get("occurrences") or 0) > 0:
+        instructions.append({
+            "step": step,
+            "title": "Apply audio cues",
+            "instruction": (
+                f"Use {audio_pattern.get('dominant_pattern')} as the dominant "
+                f"sound family at the detected cue times."
+            ),
+            "builder_id": "audio.pattern_loop.v1",
+        })
+    return instructions
+
 def build_roblox_brain_plan(source_name: str) -> RobloxBrainPlan:
     recreation = _load_recreation_bundle(source_name)
     context, scene_spec, decomposition = _collect_context(
@@ -1093,6 +1316,20 @@ def build_roblox_brain_plan(source_name: str) -> RobloxBrainPlan:
     )
     video_dna["why_it_works"] = why_it_works
     video_dna["recreation_difficulty"] = recreation_difficulty
+    retention_blueprint = _retention_blueprint(
+        core, state_actions, ui, camera_pattern, editing_pattern,
+        action_timeline, duration,
+    )
+    recreation_quality = _recreation_quality(
+        scene, core, camera, ui, audio_pattern,
+        procedural, required_assets,
+    )
+    build_instructions = _build_instruction_manual(
+        environment_graph, character_state, action_timeline, ui,
+        camera_pattern, editing_pattern, audio_pattern,
+    )
+    video_dna["retention_blueprint"] = retention_blueprint
+    video_dna["recreation_quality"] = recreation_quality
 
     plan = RobloxBrainPlan(
         source_name=source_name,
@@ -1118,6 +1355,9 @@ def build_roblox_brain_plan(source_name: str) -> RobloxBrainPlan:
         why_it_works=why_it_works,
         recreation_difficulty=recreation_difficulty,
         execution_loops=execution_loops,
+        retention_blueprint=retention_blueprint,
+        recreation_quality=recreation_quality,
+        build_instructions=build_instructions,
         duration=round(duration, 3),
         avatar_count=int(scene_spec.get("avatar_count") or 1),
         lighting=lighting,
@@ -1167,6 +1407,9 @@ def load_roblox_brain_plan(
         "why_it_works",
         "recreation_difficulty",
         "execution_loops",
+        "retention_blueprint",
+        "recreation_quality",
+        "build_instructions",
     }
     if not required_fields.issubset(data):
         return None
@@ -1210,6 +1453,9 @@ def load_roblox_brain_plan(
         why_it_works=list(data.get("why_it_works") or []),
         recreation_difficulty=dict(data.get("recreation_difficulty") or {}),
         execution_loops=list(data.get("execution_loops") or []),
+        retention_blueprint=dict(data.get("retention_blueprint") or {}),
+        recreation_quality=dict(data.get("recreation_quality") or {}),
+        build_instructions=list(data.get("build_instructions") or []),
         duration=float(data.get("duration") or 8),
         avatar_count=int(data.get("avatar_count") or 1),
         lighting=str(data.get("lighting") or "bright_cartoon"),
