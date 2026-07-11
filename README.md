@@ -1,91 +1,39 @@
-# Trend Radar X Creator AI+
+# Video Intelligence direct source files
 
-This version adds two new automation modules:
+This package contains direct replacement source files — no installer.
 
-## 1) Sound Finder
-Trend Radar now detects which sound types your auto-create projects need and creates:
+Copy these into your project:
 
-- `outputs/sound_finder.csv`
-- website page: `outputs/site/sounds.html`
+- `radar/scanner.py`
+- `radar/scoring.py`
+- `radar/classification_feedback.py`
+- `radar/classification_web.py`
 
-It gives search links for sound sources such as Pixabay, Freesound, and MyInstants, plus copyright-risk notes.
+Keep your existing:
 
-**Important:** Do not blindly reuse copyrighted audio. Prefer CC0/free-to-use sounds, sounds you create yourself, or sounds you are allowed to use.
+- `radar/video_intelligence.py`
+- `assets/`
+- `outputs/`
+- `.env`
 
-You can manually download a direct audio file URL you are allowed to use:
+Then follow `APP_INTEGRATION.md` for the two small `app.py` edits.
 
-```powershell
-py download_sound.py DIRECT_AUDIO_URL optional_filename.mp3
+## What changes
+
+- YouTube tags are saved.
+- Scanner calls `enrich_video()`.
+- Old keyword scoring respects Video Intelligence output.
+- Low-confidence classifications remain in `trend_report.csv`.
+- Low-confidence classifications are excluded from `final_opportunities.csv`.
+- Creator AI therefore only receives accepted/corrected classifications.
+- Manual corrections persist in `outputs/video_classification.db`.
+- Classification Review explains confidence and evidence.
+
+## Git commands
+
+```bash
+git checkout -b feature/video-intelligence
+git add radar/scanner.py radar/scoring.py radar/classification_feedback.py radar/classification_web.py app.py
+git commit -m "Integrate confidence-based video intelligence"
+git push -u origin feature/video-intelligence
 ```
-
-Downloaded sounds go to:
-
-```text
-assets/sounds/
-```
-
-## 2) Raw Gameplay Clip Miner
-Put full gameplay recordings here:
-
-```text
-assets/raw_gameplay/
-```
-
-Then run:
-
-```powershell
-py mine_gameplay.py
-```
-
-It will scan the long recordings for motion/visual-change moments and cut reusable clips into:
-
-```text
-assets/source/mined/
-```
-
-Report:
-
-```text
-outputs/clip_miner_report.csv
-```
-
-You can also let Trend Radar run the miner automatically by setting this in `.env`:
-
-```env
-MINE_RAW_GAMEPLAY=true
-MAX_MINED_CLIPS_PER_FILE=8
-MINED_CLIP_LENGTH_SECONDS=9
-```
-
-## Normal Run
-
-```powershell
-py -m pip install -r requirements.txt
-py trend_radar.py
-```
-
-Open:
-
-```text
-outputs/site/index.html
-```
-
-Useful pages:
-
-- Auto Studio: `outputs/site/auto_studio.html`
-- Assets: `outputs/site/assets.html`
-- Sound Finder: `outputs/site/sounds.html`
-- Viral Library: `outputs/site/library.html`
-
-## Asset folders
-
-```text
-assets/source/       # reusable clips/images
-assets/source/mined/ # AI-mined clips from raw gameplay
-assets/sounds/       # reusable meme/sfx audio
-assets/raw_gameplay/ # full gameplay recordings
-```
-
-## Safe workflow
-
-Trend Radar does **not** automatically steal YouTube clips. It finds formats and tells you whether it can create them from your asset library. If assets are missing, it tells you what to provide.

@@ -43,8 +43,10 @@ def save_feedback(
     with _connect() as con:
         con.execute(
             """
-            INSERT INTO classification_feedback
-                (video_id, ai_label, correct_label, content_type, reason, created_at, updated_at)
+            INSERT INTO classification_feedback (
+                video_id, ai_label, correct_label, content_type,
+                reason, created_at, updated_at
+            )
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(video_id) DO UPDATE SET
                 ai_label=excluded.ai_label,
@@ -53,7 +55,15 @@ def save_feedback(
                 reason=excluded.reason,
                 updated_at=excluded.updated_at
             """,
-            (video_id, ai_label, correct_label, content_type, reason, now, now),
+            (
+                video_id,
+                ai_label,
+                correct_label,
+                content_type,
+                reason,
+                now,
+                now,
+            ),
         )
         con.commit()
 
@@ -76,20 +86,16 @@ def list_feedback() -> list[dict[str, Any]]:
 
 
 def get_label_priors() -> dict[str, float]:
-    """Small calibration priors learned from corrections.
-
-    A label that is frequently selected by the user receives a modest boost.
-    A label frequently replaced receives a modest penalty.
-    """
+    """Small calibration priors learned from your corrections."""
     priors: dict[str, float] = {}
-    rows = list_feedback()
-    if not rows:
-        return priors
-    for row in rows:
+    for row in list_feedback():
         correct = str(row.get("correct_label") or "")
         ai_label = str(row.get("ai_label") or "")
         if correct:
             priors[correct] = priors.get(correct, 0.0) + 0.12
         if ai_label and ai_label != correct:
             priors[ai_label] = priors.get(ai_label, 0.0) - 0.08
-    return {key: max(-0.75, min(0.75, value)) for key, value in priors.items()}
+    return {
+        key: max(-0.75, min(0.75, value))
+        for key, value in priors.items()
+    }
