@@ -1,0 +1,3 @@
+Replace radar/roblox_brain.py and radar/roblox_brain_web.py with these files.
+Restart Flask, open /roblox-brain, and click Rebuild full Roblox Brain plan.
+Older JSON plans are automatically rebuilt because the final Part 2A fields are required.
