@@ -48,6 +48,7 @@ NAV_ITEMS = [
     ("/analysis-review", "Analysis Review"),
     ("/recreation-lab", "Roblox Recreation Lab"),
     ("/audio-autopilot", "Audio Intelligence Autopilot"),
+    ("/roblox-generation", "Roblox Studio Generation"),
 ]
 
 
@@ -666,7 +667,13 @@ register_audio_autopilot_routes(
     page,
     esc,
 )
+from radar.roblox_generation_web import register_roblox_generation_routes
 
+register_roblox_generation_routes(
+    app,
+    page,
+    esc,
+)
 if __name__ == "__main__":
     from radar.channel_feedback import start_background_sync
     start_background_sync()
