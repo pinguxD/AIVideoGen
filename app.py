@@ -36,6 +36,8 @@ NAV_ITEMS = [
     ("/recommendations", "Recommended Shorts"),
     ("/auto-studio", "Auto Studio"),
     ("/creator-ai", "🤖 Creator AI"),
+    ("/map-analyzer", "🗺️ Advanced Map Analyzer"),
+    ("/creator-ai-v2", "🚀 Creator AI v2"),
     ("/sound-library", "🎵 Sound Library"),
     ("/library", "Viral Library"),
     ("/trends", "Trend Groups"),
@@ -53,7 +55,6 @@ NAV_ITEMS = [
     ("/roblox-brain", "Roblox Brain"),
     ("/scene-builder", "Roblox Scene Builder"),
     ("/scene-builder-plugin", "Roblox Studio Installer"),
-    ("/short-producer", "🎥 Short Producer MVP"),
 ]
 
 
@@ -710,9 +711,13 @@ register_scene_builder_plugin_routes(
     esc,
 )
 
-from radar.short_producer_web import register_short_producer_routes
+from radar.creator_ai_v2_web import register_creator_ai_v2_routes
+register_creator_ai_v2_routes(app, page, esc)
 
-register_short_producer_routes(
+
+from radar.map_analyzer_web import register_map_analyzer_routes
+
+register_map_analyzer_routes(
     app,
     page,
     esc,
