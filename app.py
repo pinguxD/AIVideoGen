@@ -52,6 +52,7 @@ NAV_ITEMS = [
     ("/roblox-plugin", "Roblox Studio Plugin Bridge"),
     ("/roblox-brain", "Roblox Brain"),
     ("/scene-builder", "Roblox Scene Builder"),
+    ("/scene-builder-plugin", "Roblox Studio Installer"),
 ]
 
 
@@ -694,6 +695,15 @@ register_roblox_brain_routes(
 from radar.scene_builder_web import register_scene_builder_routes
 
 register_scene_builder_routes(
+    app,
+    page,
+    esc,
+)
+from radar.scene_builder_plugin_web import (
+    register_scene_builder_plugin_routes,
+)
+
+register_scene_builder_plugin_routes(
     app,
     page,
     esc,
