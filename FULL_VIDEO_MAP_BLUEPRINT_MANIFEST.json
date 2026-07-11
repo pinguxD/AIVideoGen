@@ -1,0 +1,14 @@
+{
+  "name": "AIVideoGen Full-Video Map Blueprint",
+  "added": [
+    "radar/map_blueprint.py",
+    "radar/map_blueprint_web.py",
+    "FULL_VIDEO_MAP_BLUEPRINT_SETUP.md"
+  ],
+  "upgraded": [
+    "radar/world_planner.py",
+    "radar/creator_ai_v2_pipeline.py",
+    "radar/creator_ai_v2_web.py",
+    "app.py"
+  ]
+}

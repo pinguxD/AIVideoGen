@@ -37,6 +37,7 @@ NAV_ITEMS = [
     ("/auto-studio", "Auto Studio"),
     ("/creator-ai", "🤖 Creator AI"),
     ("/map-analyzer", "🗺️ Advanced Map Analyzer"),
+    ("/map-blueprint", "🧭 Full-Video Map Blueprint"),
     ("/creator-ai-v2", "🚀 Creator AI v2"),
     ("/sound-library", "🎵 Sound Library"),
     ("/library", "Viral Library"),
@@ -718,6 +719,15 @@ register_creator_ai_v2_routes(app, page, esc)
 from radar.map_analyzer_web import register_map_analyzer_routes
 
 register_map_analyzer_routes(
+    app,
+    page,
+    esc,
+)
+
+
+from radar.map_blueprint_web import register_map_blueprint_routes
+
+register_map_blueprint_routes(
     app,
     page,
     esc,
