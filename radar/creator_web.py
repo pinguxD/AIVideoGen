@@ -13,6 +13,7 @@ from .sound_library import (
     update_sound_feedback,
 )
 from .template_renderer import render_project
+from .clip_brain import save_feedback
 
 
 def register_creator_routes(app, base: Path, page, render_stats, load_recommendations, esc):
@@ -74,6 +75,23 @@ def register_creator_routes(app, base: Path, page, render_stats, load_recommenda
         if p.source_clip:
             clip_html = f'<video controls preload="metadata" src="/creator-ai/source/{esc(Path(p.source_clip).name)}"></video><p class="path">{esc(p.source_clip)}</p>'
 
+        clip_feedback = ""
+        if p.source_clip:
+            buttons = [
+                ("fits", "Fits project"),
+                ("does_not_fit", "Doesn't fit"),
+                ("wrong_character", "Wrong character"),
+                ("wrong_action", "Wrong action"),
+                ("character_not_visible", "Character not visible"),
+                ("too_much_ui", "Too much UI"),
+                ("poor_framing", "Poor framing"),
+                ("never_use", "Never use clip"),
+            ]
+            clip_feedback = '<div class="card"><h3>Clip feedback</h3><p>Teach Clip Brain why this asset fits or fails this specific inspiration.</p><div class="row-actions">' + ''.join(
+                f'<form method="post" action="/creator-ai/clip-feedback/{esc(p.video_id)}/{action}"><button>{esc(label)}</button></form>'
+                for action, label in buttons
+            ) + '</div></div>'
+
         sound_cards = []
         for idx, sound_file in enumerate(p.sounds):
             asset = asset_by_file(sound_file)
@@ -108,7 +126,8 @@ def register_creator_routes(app, base: Path, page, render_stats, load_recommenda
           <div>
             <div class="card"><h2>{esc(p.inspiration_title)}</h2>{clip_html}</div>
             <div class="card">
-              <h3>Final settings</h3>
+              {clip_feedback}
+        <h3>Final settings</h3>
               <form method="post" action="/creator-ai/approve/{esc(video_id)}">
                 <label>Source clip</label><br><select name="source_clip" style="max-width:100%">{clip_options}</select><br><br>
                 <label>Correct answer</label><br><select name="correct_answer">{answer_options}</select><br><br>
@@ -181,6 +200,30 @@ def register_creator_routes(app, base: Path, page, render_stats, load_recommenda
             p.approved = False
             p.status = "READY_FOR_APPROVAL"
             p.save()
+        return redirect(f"/creator-ai/project/{video_id}")
+
+    @app.route("/creator-ai/clip-feedback/<video_id>/<action>", methods=["POST"])
+    def creator_clip_feedback(video_id: str, action: str):
+        allowed = {
+            "fits", "does_not_fit", "wrong_character", "wrong_action",
+            "character_not_visible", "too_much_ui", "poor_framing", "never_use",
+        }
+        if action not in allowed:
+            return "Unknown feedback action", 400
+        p = load_project(video_id)
+        if not p.source_clip:
+            return "Project has no selected clip", 400
+        save_feedback(
+            clip_path=p.source_clip,
+            video_id=p.video_id,
+            template_type=p.template_type,
+            character_name=p.character_name,
+            action=action,
+            reason=str(request.form.get("reason") or "").strip(),
+        )
+        p.approved = False
+        p.status = "READY_FOR_APPROVAL"
+        p.save()
         return redirect(f"/creator-ai/project/{video_id}")
 
     @app.route("/creator-ai/approve/<video_id>", methods=["POST"])

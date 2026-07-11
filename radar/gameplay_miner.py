@@ -85,7 +85,7 @@ def _frame_score(clip, t: float, prev=None):
     except Exception:
         return prev, 0.0, 0.0
 
-def find_interesting_moments(path: Path, max_clips: int = 8, clip_len: float = 9.0, sample_every: float = 1.0):
+def find_interesting_moments(path: Path, max_clips: int = 30, clip_len: float = 9.0, sample_every: float = 1.0):
     from moviepy.editor import VideoFileClip
     from tqdm import tqdm
 
@@ -152,7 +152,7 @@ def find_interesting_moments(path: Path, max_clips: int = 8, clip_len: float = 9
 
     return sorted(chosen, key=lambda x: x[0])
 
-def mine_raw_gameplay(max_clips_per_file: int = 8, clip_len: float = 9.0, force: bool = False):
+def mine_raw_gameplay(max_clips_per_file: int = 30, clip_len: float = 9.0, force: bool = False):
     ensure_dirs()
     from moviepy.editor import VideoFileClip
     from tqdm import tqdm

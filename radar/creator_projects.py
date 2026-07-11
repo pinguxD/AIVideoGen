@@ -10,6 +10,7 @@ import pandas as pd
 
 from .sound_library import ensure_unique_sounds, search_local_unique
 from .channel_feedback import classify_hook, personal_multiplier
+from .clip_brain import choose_clips_for_project
 
 BASE = Path(__file__).resolve().parents[1]
 PROJECT_DIR = BASE / "outputs" / "creator_projects"
@@ -35,6 +36,14 @@ class CreatorProject:
     missing: list[str] = field(default_factory=list)
     output_file: str = ""
     notes: list[str] = field(default_factory=list)
+    character_name: str = ""
+    correct_answer: int = 1
+    approved: bool = False
+    approval_notes: str = ""
+    clip_match_score: float = 0.0
+    clip_match_reasons: list[str] = field(default_factory=list)
+    clip_match_warnings: list[str] = field(default_factory=list)
+    recording_task: str = ""
 
     def save(self) -> Path:
         PROJECT_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,7 +143,14 @@ def analyze_candidate(video: dict[str, Any], fetch_sounds: bool = False) -> Crea
     template = _normalise_template(str(video.get("template_type") or ""), title)
 
     clip_count = 5 if template == "guess_voice" else 1
-    clips = _choose_clips(clip_count)
+    character_match = re.search(r"(?:real\s+)?([a-z0-9 _-]{2,30}?)\s+(?:voice|sound|scream)", title, re.I)
+    character_name = character_match.group(1).strip() if character_match else ""
+    clips, clip_matches, clip_requirements, recording_task = choose_clips_for_project(
+        title=title,
+        template_type=template,
+        character_name=character_name,
+        count=clip_count,
+    )
     queries = _sound_queries(template, title)
 
     if fetch_sounds:
@@ -148,8 +164,8 @@ def analyze_candidate(video: dict[str, Any], fetch_sounds: bool = False) -> Crea
     missing: list[str] = []
     if not clips:
         missing.append("source gameplay/character clip")
-    if template == "guess_voice" and len(clips) < 4:
-        missing.append(f"{4 - len(clips)} more distinct gameplay clips")
+    if template == "guess_voice" and len(clips) < 1:
+        missing.append("one relevant character/gameplay clip")
     if template == "guess_voice" and len(sound_files) < 4:
         missing.append(f"{4 - len(sound_files)} more unique sounds")
     elif unresolved:
@@ -185,8 +201,13 @@ def analyze_candidate(video: dict[str, Any], fetch_sounds: bool = False) -> Crea
         sound_queries=queries,
         text_lines=_text_lines(template, title),
         missing=missing,
+        character_name=character_name,
+        clip_match_score=clip_matches[0].score if clip_matches else 0.0,
+        clip_match_reasons=clip_matches[0].reasons if clip_matches else [],
+        clip_match_warnings=clip_matches[0].warnings if clip_matches else [],
+        recording_task=recording_task,
         notes=[
-            "Creator AI selected distinct clips ranked by your ratings and miner score.",
+            "Clip Brain selected assets against the inspiration requirements, your ratings, and project feedback.",
             "Sound AI searches locally first, then Freesound until it has unique licensed assets.",
             f"Automatic channel-learning multiplier: {channel_multiplier:.2f} for {template}/{hook_type}.",
         ],
@@ -206,6 +227,22 @@ def analyze_dataframe(df: pd.DataFrame, fetch_sounds: bool = False, limit: int =
     return [analyze_candidate(row.to_dict(), fetch_sounds=fetch_sounds) for _, row in work.head(limit).iterrows()]
 
 
+
+def _normalise_project_data(data: dict[str, Any]) -> dict[str, Any]:
+    defaults = {
+        "source_clip": "", "source_clips": [], "sounds": [], "sound_queries": [],
+        "text_lines": [], "missing": [], "output_file": "", "notes": [],
+        "character_name": "", "correct_answer": 1, "approved": False,
+        "approval_notes": "", "clip_match_score": 0.0,
+        "clip_match_reasons": [], "clip_match_warnings": [], "recording_task": "",
+    }
+    for key, value in defaults.items():
+        data.setdefault(key, value.copy() if isinstance(value, list) else value)
+    if not data.get("source_clips") and data.get("source_clip"):
+        data["source_clips"] = [data["source_clip"]]
+    allowed = set(CreatorProject.__dataclass_fields__)
+    return {key: value for key, value in data.items() if key in allowed}
+
 def load_projects() -> list[CreatorProject]:
     PROJECT_DIR.mkdir(parents=True, exist_ok=True)
     projects: list[CreatorProject] = []
@@ -213,7 +250,7 @@ def load_projects() -> list[CreatorProject]:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             data.setdefault("source_clips", [data.get("source_clip", "")] if data.get("source_clip") else [])
-            projects.append(CreatorProject(**data))
+            projects.append(CreatorProject(**_normalise_project_data(data)))
         except Exception as exc:
             print(f"[Creator AI] Could not load {path.name}: {exc}")
     return projects
@@ -233,4 +270,4 @@ def load_project(video_id: str) -> CreatorProject:
         else [],
     )
 
-    return CreatorProject(**data)
+    return CreatorProject(**_normalise_project_data(data))
