@@ -101,13 +101,43 @@ def _safe_source_key(source_name: str) -> str:
 
 
 def find_report_files(source_name: str) -> tuple[Path | None, Path | None]:
-    key = _safe_source_key(source_name)
-    analysis_candidates = list(REPORT_DIR.glob(f"{key}*.analysis.json"))
-    plan_candidates = list(REPORT_DIR.glob(f"{key}*.plan.json"))
-    return (
-        analysis_candidates[0] if analysis_candidates else None,
-        plan_candidates[0] if plan_candidates else None,
-    )
+    """
+    Locate report files using the original filename first.
+
+    reference_library.py keeps spaces in report filenames, while source_key
+    replaces spaces with underscores for database-safe identifiers.
+    """
+    original_stem = Path(source_name).stem.strip()
+    safe_key = _safe_source_key(source_name)
+
+    exact_analysis = REPORT_DIR / f"{original_stem}.analysis.json"
+    exact_plan = REPORT_DIR / f"{original_stem}.plan.json"
+
+    if exact_analysis.exists():
+        analysis_path = exact_analysis
+    else:
+        analysis_candidates = list(
+            REPORT_DIR.glob(f"{original_stem}*.analysis.json")
+        )
+        if not analysis_candidates:
+            analysis_candidates = list(
+                REPORT_DIR.glob(f"{safe_key}*.analysis.json")
+            )
+        analysis_path = analysis_candidates[0] if analysis_candidates else None
+
+    if exact_plan.exists():
+        plan_path = exact_plan
+    else:
+        plan_candidates = list(
+            REPORT_DIR.glob(f"{original_stem}*.plan.json")
+        )
+        if not plan_candidates:
+            plan_candidates = list(
+                REPORT_DIR.glob(f"{safe_key}*.plan.json")
+            )
+        plan_path = plan_candidates[0] if plan_candidates else None
+
+    return analysis_path, plan_path
 
 
 def load_review_bundle(source_name: str) -> dict[str, Any]:

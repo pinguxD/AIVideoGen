@@ -640,12 +640,6 @@ register_channel_routes(app, page, esc)
 from radar.creator_web import register_creator_routes
 register_creator_routes(app, BASE, page, render_stats, load_recommendations, esc)
 
-if __name__ == "__main__":
-    from radar.channel_feedback import start_background_sync
-    start_background_sync()
-    print("Open http://127.0.0.1:5000/studio")
-    app.run(debug=False)
-
 from radar.analysis_review_web import register_analysis_review_routes
 
 register_analysis_review_routes(
@@ -653,3 +647,9 @@ register_analysis_review_routes(
     page,
     esc,
 )
+
+if __name__ == "__main__":
+    from radar.channel_feedback import start_background_sync
+    start_background_sync()
+    print("Open http://127.0.0.1:5000/studio")
+    app.run(debug=False)
