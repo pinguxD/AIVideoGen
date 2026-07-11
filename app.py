@@ -36,6 +36,7 @@ NAV_ITEMS = [
     ("/recommendations", "Recommended Shorts"),
     ("/auto-studio", "Auto Studio"),
     ("/creator-ai", "🤖 Creator AI"),
+    ("/story-scout", "📚 Viral Story Scout"),
     ("/map-analyzer", "🗺️ Advanced Map Analyzer"),
     ("/map-blueprint", "🧭 Full-Video Map Blueprint"),
     ("/creator-ai-v2", "🚀 Creator AI v2"),
@@ -728,6 +729,15 @@ register_map_analyzer_routes(
 from radar.map_blueprint_web import register_map_blueprint_routes
 
 register_map_blueprint_routes(
+    app,
+    page,
+    esc,
+)
+
+
+from radar.story_scout_web import register_story_scout_routes
+
+register_story_scout_routes(
     app,
     page,
     esc,

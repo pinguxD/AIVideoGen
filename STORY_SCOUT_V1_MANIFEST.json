@@ -1,0 +1,11 @@
+{
+  "name": "AIVideoGen Viral Gaming Story Scout v1",
+  "added": [
+    "radar/story_scout.py",
+    "radar/story_scout_web.py",
+    "STORY_SCOUT_V1_SETUP.md"
+  ],
+  "updated": [
+    "app.py"
+  ]
+}

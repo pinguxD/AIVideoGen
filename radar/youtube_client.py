@@ -14,9 +14,27 @@ def iso_duration_seconds(s):
 class YouTubeClient:
     def __init__(self, api_key):
         self.yt=build('youtube','v3',developerKey=api_key)
-    def search(self, q, days_back=7, max_results=25, region='US'):
+    def search(
+        self,
+        q,
+        days_back=7,
+        max_results=25,
+        region='US',
+        relevance_language='en',
+    ):
         after=(datetime.now(timezone.utc)-timedelta(days=days_back)).isoformat().replace('+00:00','Z')
-        res=self.yt.search().list(part='snippet', q=q, type='video', maxResults=max_results, order='viewCount', publishedAfter=after, regionCode=region).execute()
+        request = dict(
+            part='snippet',
+            q=q,
+            type='video',
+            maxResults=max_results,
+            order='viewCount',
+            publishedAfter=after,
+            regionCode=region,
+        )
+        if relevance_language:
+            request['relevanceLanguage'] = relevance_language
+        res=self.yt.search().list(**request).execute()
         return res.get('items',[])
     def enrich(self, items):
         ids=[]; raw={}

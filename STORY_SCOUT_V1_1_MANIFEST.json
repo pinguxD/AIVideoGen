@@ -1,0 +1,10 @@
+{
+  "name": "Story Scout v1.1 English Roblox Minecraft",
+  "changes": [
+    "English relevanceLanguage search hint",
+    "Strict local English confidence filter",
+    "Roblox/Minecraft-only game filter",
+    "Narrowed default search queries",
+    "English confidence and detected-game UI fields"
+  ]
+}
