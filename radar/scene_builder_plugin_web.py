@@ -11,6 +11,11 @@ from .scene_builder_plugin_bridge import (
     package_payload,
     queue_scene_build,
 )
+from .scene_builder_plugin_launcher import (
+    open_plugin_file,
+    open_plugin_folder,
+    prepare_and_launch,
+)
 
 
 def register_scene_builder_plugin_routes(app, page, esc) -> None:
@@ -23,16 +28,18 @@ def register_scene_builder_plugin_routes(app, page, esc) -> None:
               <p>
                 <b>Build:</b> {esc(build.get("build_id", ""))}<br>
                 <b>Status:</b> {esc(build.get("status", ""))}<br>
-                <b>Artifacts:</b>
-                {esc(len(build.get("artifacts") or []))}
+                <b>Artifacts:</b> {esc(len(build.get("artifacts") or []))}
               </p>
-              <form method="post"
-                    action="/scene-builder-plugin/queue">
-                <input type="hidden"
-                       name="build_id"
-                       value="{esc(build.get("build_id", ""))}">
+              <form method="post" action="/scene-builder-plugin/queue-and-open">
+                <input type="hidden" name="build_id" value="{esc(build.get("build_id", ""))}">
                 <button type="submit">
-                  Queue package for Roblox Studio
+                  Queue + Open Plugin + Launch Studio
+                </button>
+              </form>
+              <form method="post" action="/scene-builder-plugin/queue" style="margin-top:8px">
+                <input type="hidden" name="build_id" value="{esc(build.get("build_id", ""))}">
+                <button type="submit">
+                  Queue only
                 </button>
               </form>
             </div>
@@ -62,10 +69,18 @@ def register_scene_builder_plugin_routes(app, page, esc) -> None:
         <h1>Roblox Studio Installer — Part 3B</h1>
 
         <div class="card">
+          <h2>One-time plugin setup</h2>
           <p>
-            Queue a Part 3A package here, then open Roblox Studio and click
-            <b>AIVideoGen → Fetch &amp; Install</b>.
+            The program can generate and open the plugin file and launch Studio.
+            Roblox still requires you to save it as a Local Plugin once for security.
+            After that, future builds only need Queue + Fetch &amp; Install.
           </p>
+          <form method="post" action="/scene-builder-plugin/open-plugin">
+            <button type="submit">Generate &amp; Open Plugin File</button>
+          </form>
+          <form method="post" action="/scene-builder-plugin/open-plugin-folder" style="margin-top:8px">
+            <button type="submit">Open Generated Plugin Folder</button>
+          </form>
         </div>
 
         {build_cards}
@@ -75,11 +90,8 @@ def register_scene_builder_plugin_routes(app, page, esc) -> None:
           <table>
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Build</th>
-                <th>Status</th>
-                <th>Job</th>
-                <th>Message</th>
+                <th>Reference</th><th>Build</th><th>Status</th>
+                <th>Job</th><th>Message</th>
               </tr>
             </thead>
             <tbody>{job_rows}</tbody>
@@ -93,41 +105,121 @@ def register_scene_builder_plugin_routes(app, page, esc) -> None:
             "/scene-builder-plugin",
         )
 
-    @app.route(
-        "/scene-builder-plugin/queue",
-        methods=["POST"],
-    )
-    def scene_builder_plugin_queue():
-        build_id = str(
-            request.form.get("build_id") or ""
-        ).strip()
+    def _queue(build_id: str):
+        if not build_id:
+            raise ValueError("No Part 3A build was selected.")
+        return queue_scene_build(build_id)
 
+    @app.route("/scene-builder-plugin/queue", methods=["POST"])
+    def scene_builder_plugin_queue():
+        build_id = str(request.form.get("build_id") or "").strip()
         try:
-            job = queue_scene_build(build_id)
+            job = _queue(build_id)
         except Exception as exc:
             return page(
                 "Queue failed",
-                f"""
-                <h1>Could not queue Studio package</h1>
-                <div class="card"><pre>{esc(exc)}</pre></div>
-                <a class="btn" href="/scene-builder-plugin">Back</a>
-                """,
+                f'<h1>Could not queue package</h1><div class="card"><pre>{esc(exc)}</pre></div>',
                 "/scene-builder-plugin",
             ), 500
 
         return page(
             "Package queued",
             f"""
-            <h1>Package queued for Roblox Studio</h1>
+            <h1>Package queued</h1>
             <div class="card">
-              <p><b>Reference:</b> {esc(job.source_name)}</p>
               <p><b>Build:</b> {esc(job.build_id)}</p>
-              <p><b>Job:</b> {esc(job.job_id)}</p>
+              <p>Open Studio and click <b>AIVideoGen → Fetch &amp; Install</b>.</p>
+            </div>
+            <a class="btn" href="/scene-builder-plugin">Back</a>
+            """,
+            "/scene-builder-plugin",
+        )
+
+    @app.route("/scene-builder-plugin/queue-and-open", methods=["POST"])
+    def scene_builder_plugin_queue_and_open():
+        build_id = str(request.form.get("build_id") or "").strip()
+        try:
+            job = _queue(build_id)
+            launch = prepare_and_launch(
+                open_plugin=True,
+                launch_roblox_studio=True,
+            )
+        except Exception as exc:
+            return page(
+                "Launch failed",
+                f'<h1>Could not prepare Studio</h1><div class="card"><pre>{esc(exc)}</pre></div>',
+                "/scene-builder-plugin",
+            ), 500
+
+        warnings = "<br>".join(
+            esc(item) for item in launch.get("warnings", [])
+        ) or "None"
+
+        return page(
+            "Studio prepared",
+            f"""
+            <h1>Package queued and Studio prepared</h1>
+            <div class="card">
+              <p><b>Build:</b> {esc(job.build_id)}</p>
+              <p><b>Plugin file:</b> <span class="path">{esc(launch.get("plugin_path", ""))}</span></p>
+              <p><b>Plugin opened:</b> {esc(launch.get("plugin_opened", False))}</p>
+              <p><b>Studio launched:</b> {esc(launch.get("studio_launched", False))}</p>
+              <p><b>Warnings:</b><br>{warnings}</p>
+            </div>
+            <div class="card">
+              <h2>First time only</h2>
               <p>
-                In Studio click
-                <b>AIVideoGen → Fetch &amp; Install</b>.
+                Copy the opened Lua file into a Script in Studio and choose
+                <b>Plugins → Save as Local Plugin</b>. Restart Studio once.
+              </p>
+              <p>
+                After installation, click <b>AIVideoGen → Fetch &amp; Install</b>.
               </p>
             </div>
+            <a class="btn" href="/scene-builder-plugin">Back</a>
+            """,
+            "/scene-builder-plugin",
+        )
+
+    @app.route("/scene-builder-plugin/open-plugin", methods=["POST"])
+    def scene_builder_plugin_open_plugin():
+        try:
+            path = open_plugin_file()
+        except Exception as exc:
+            return page(
+                "Open failed",
+                f'<h1>Could not open plugin</h1><div class="card"><pre>{esc(exc)}</pre></div>',
+                "/scene-builder-plugin",
+            ), 500
+
+        return page(
+            "Plugin opened",
+            f"""
+            <h1>Plugin file generated and opened</h1>
+            <div class="card">
+              <span class="path">{esc(path)}</span>
+            </div>
+            <a class="btn" href="/scene-builder-plugin">Back</a>
+            """,
+            "/scene-builder-plugin",
+        )
+
+    @app.route("/scene-builder-plugin/open-plugin-folder", methods=["POST"])
+    def scene_builder_plugin_open_plugin_folder():
+        try:
+            path = open_plugin_folder()
+        except Exception as exc:
+            return page(
+                "Open failed",
+                f'<h1>Could not open folder</h1><div class="card"><pre>{esc(exc)}</pre></div>',
+                "/scene-builder-plugin",
+            ), 500
+
+        return page(
+            "Folder opened",
+            f"""
+            <h1>Generated plugin folder opened</h1>
+            <div class="card"><span class="path">{esc(path)}</span></div>
             <a class="btn" href="/scene-builder-plugin">Back</a>
             """,
             "/scene-builder-plugin",
@@ -138,44 +230,23 @@ def register_scene_builder_plugin_routes(app, page, esc) -> None:
         job = next_pending_job()
         if job is None:
             return jsonify({"ok": True, "job": None})
-
         try:
             payload = package_payload(job)
         except Exception as exc:
             fail_job(job.job_id, str(exc))
-            return jsonify(
-                {
-                    "ok": False,
-                    "error": str(exc),
-                }
-            ), 500
+            return jsonify({"ok": False, "error": str(exc)}), 500
+        return jsonify({"ok": True, "job": payload})
 
-        return jsonify(
-            {
-                "ok": True,
-                "job": payload,
-            }
-        )
-
-    @app.route(
-        "/api/scene-builder-plugin/jobs/<job_id>/complete",
-        methods=["POST"],
-    )
+    @app.route("/api/scene-builder-plugin/jobs/<job_id>/complete", methods=["POST"])
     def scene_builder_plugin_complete(job_id: str):
         payload = request.get_json(silent=True) or {}
         job = complete_job(
             job_id,
-            str(
-                payload.get("message")
-                or "Studio package installed successfully."
-            ),
+            str(payload.get("message") or "Studio package installed successfully."),
         )
         return jsonify({"ok": True, "status": job.status})
 
-    @app.route(
-        "/api/scene-builder-plugin/jobs/<job_id>/fail",
-        methods=["POST"],
-    )
+    @app.route("/api/scene-builder-plugin/jobs/<job_id>/fail", methods=["POST"])
     def scene_builder_plugin_fail(job_id: str):
         payload = request.get_json(silent=True) or {}
         job = fail_job(

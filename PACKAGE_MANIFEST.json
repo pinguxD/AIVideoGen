@@ -1,11 +1,10 @@
 {
-  "name": "roblox_scene_builder_part3B",
+  "name": "roblox_place_generator_part3B_3C",
   "files": [
-    "PART3B_SETUP.md",
-    "radar/scene_builder_plugin_bridge.py",
-    "radar/scene_builder_plugin_web.py",
-    "roblox_plugin/AIVideoGenPart3B.lua",
-    "radar/__pycache__/scene_builder_plugin_bridge.cpython-313.pyc",
-    "radar/__pycache__/scene_builder_plugin_web.cpython-313.pyc"
+    "PART3B_3C_SETUP.md",
+    "radar/roblox_place_generator.py",
+    "radar/roblox_place_web.py",
+    "radar/__pycache__/roblox_place_generator.cpython-313.pyc",
+    "radar/__pycache__/roblox_place_web.cpython-313.pyc"
   ]
 }
