@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from flask import redirect, request
@@ -12,6 +11,7 @@ from .analysis_feedback import (
     save_analysis_correction,
 )
 from .analysis_review import load_review_bundle, write_corrected_bundle
+from .analysis_to_creator import create_project_from_analysis
 from .reference_library import list_reference_runs
 
 
@@ -71,13 +71,7 @@ ENDING_TYPES = [
     "summary",
 ]
 
-VOICE_TYPES = [
-    "",
-    "no_voice",
-    "human_voice",
-    "ai_voice",
-    "uncertain",
-]
+VOICE_TYPES = ["", "no_voice", "human_voice", "ai_voice", "uncertain"]
 
 VOICE_STYLES = [
     "",
@@ -186,13 +180,10 @@ def register_analysis_review_routes(app, page, esc) -> None:
         <h1>Analysis Review</h1>
         <div class="card">
           <p>
-            Correct the AI's understanding of format, hook, goal, emotion,
-            voice, captions, memes, sounds, and timeline events.
-            Corrections are saved permanently and exported as corrected
-            analysis/production-plan JSON files.
+            Correct the analysis, then create a Creator AI project from the
+            corrected production plan.
           </p>
         </div>
-
         <div class="card">
           <table>
             <thead>
@@ -201,8 +192,7 @@ def register_analysis_review_routes(app, page, esc) -> None:
             <tbody>{rows}</tbody>
           </table>
         </div>
-
-        <h2>What the AI has learned from your corrections</h2>
+        <h2>Learning from corrections</h2>
         <div class="card">
           <table>
             <thead><tr><th>Group</th><th>Label</th><th>Examples</th></tr></thead>
@@ -214,7 +204,8 @@ def register_analysis_review_routes(app, page, esc) -> None:
 
     @app.route("/analysis-review/<path:source_name>")
     def analysis_review_detail(source_name: str):
-        bundle = load_review_bundle(Path(source_name).name)
+        source_name = Path(source_name).name
+        bundle = load_review_bundle(source_name)
         analysis = bundle["analysis"]
         plan = bundle["plan"]
         correction = bundle["correction"]
@@ -269,6 +260,12 @@ def register_analysis_review_routes(app, page, esc) -> None:
         ) or '<tr><td colspan="6">No corrected timeline events yet.</td></tr>'
 
         original_format = plan.get("detected_format", "")
+        corrected_format = (
+            correction.get("corrected_format")
+            or original_format
+            or "manual_complex_edit"
+        )
+
         body = f"""
         <h1>Review: {esc(source_name)}</h1>
 
@@ -292,7 +289,7 @@ def register_analysis_review_routes(app, page, esc) -> None:
 
             <label>Correct format</label>
             <select name="corrected_format">
-              {options(FORMATS, correction.get("corrected_format") or original_format)}
+              {options(FORMATS, corrected_format)}
             </select>
 
             <label>Hook type</label>
@@ -348,15 +345,34 @@ def register_analysis_review_routes(app, page, esc) -> None:
         </form>
 
         <div class="card">
-          <h2>Add corrected timeline event</h2>
-          <form method="post" action="/analysis-review/timeline/add/{esc(source_key)}">
+          <h2>Create from this analysis</h2>
+          <p>
+            This reads the corrected plan, selects matching gameplay, uses
+            sounds only when the format requires them, and creates a Creator AI
+            project. Unsupported narrated formats are kept in Needs Assets
+            instead of being incorrectly rendered as soundboard videos.
+          </p>
+          <form method="post"
+                action="/analysis-review/create-project/{esc(source_key)}">
             <input type="hidden" name="source_name" value="{esc(source_name)}">
-            <input name="start_time" type="number" step="0.01" min="0" placeholder="Start" required>
-            <input name="end_time" type="number" step="0.01" min="0" placeholder="End" required>
+            <button type="submit">Create project from analysis</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Add corrected timeline event</h2>
+          <form method="post"
+                action="/analysis-review/timeline/add/{esc(source_key)}">
+            <input type="hidden" name="source_name" value="{esc(source_name)}">
+            <input name="start_time" type="number" step="0.01" min="0"
+                   placeholder="Start" required>
+            <input name="end_time" type="number" step="0.01" min="0"
+                   placeholder="End" required>
             <select name="event_type">
               {options(TIMELINE_EVENT_TYPES, "")}
             </select>
-            <input name="label" placeholder="e.g. Vine boom / Rock eyebrow / hook text">
+            <input name="label"
+                   placeholder="e.g. Vine boom / image insert / hook text">
             <input name="notes" placeholder="Optional correction note">
             <button type="submit">Add event</button>
           </form>
@@ -416,7 +432,39 @@ def register_analysis_review_routes(app, page, esc) -> None:
         write_corrected_bundle(source_name)
         return redirect(f"/analysis-review/{Path(source_name).name}")
 
-    @app.route("/analysis-review/timeline/add/<source_key>", methods=["POST"])
+    @app.route(
+        "/analysis-review/create-project/<source_key>",
+        methods=["POST"],
+    )
+    def analysis_create_project(source_key: str):
+        source_name = str(request.form.get("source_name") or source_key)
+        try:
+            # Ensure the current human selections are reflected in the plan.
+            write_corrected_bundle(source_name)
+            project = create_project_from_analysis(
+                source_name,
+                fetch_sounds=True,
+            )
+        except Exception as exc:
+            return page(
+                "Creator project error",
+                f"""
+                <h1>Could not create project</h1>
+                <div class="card"><pre>{esc(exc)}</pre></div>
+                <p><a class="btn"
+                      href="/analysis-review/{esc(Path(source_name).name)}">
+                   Back to analysis
+                </a></p>
+                """,
+                "/analysis-review",
+            ), 500
+
+        return redirect(f"/creator-ai/project/{project.video_id}")
+
+    @app.route(
+        "/analysis-review/timeline/add/<source_key>",
+        methods=["POST"],
+    )
     def analysis_timeline_add(source_key: str):
         source_name = str(request.form.get("source_name") or source_key)
         add_timeline_correction(

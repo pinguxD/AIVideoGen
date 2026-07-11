@@ -1,38 +1,56 @@
-# Human Analysis Correction System
+# Analysis → Creator AI Bridge
 
-This is the next layer for Full Video Intelligence.
-
-It allows you to correct:
-
-- overall format;
-- hook type;
-- video goal;
-- main emotion;
-- ending type;
-- human/AI/no voice;
-- voice style;
-- caption style;
-- meme usage;
-- sound usage;
-- exact timeline events such as memes, sounds, zooms, captions and reveals.
-
-Every correction is stored permanently in:
+Copy these two files into `radar/`:
 
 ```text
-outputs/analysis_feedback.db
+analysis_to_creator.py
+analysis_review_web.py
 ```
 
-It also generates corrected copies of the analyzer output and production plan:
+The second file replaces the existing `analysis_review_web.py`.
+
+Restart:
+
+```powershell
+Ctrl + C
+py app.py
+```
+
+Open an analyzed reference, verify/correct it, save the correction, then click:
 
 ```text
-outputs/corrected_reference_analysis/
+Create project from analysis
 ```
 
-This is important because the correction is not only displayed in the website.
-It changes the downstream production plan. A fact/list correction, for example,
-turns off soundboard selection so Creator AI cannot turn it into a Guess Voice
-project again.
+## Behavior
 
-The learning-statistics table shows how many corrected examples exist for each
-label. These become the training/calibration dataset for future classifier/model
-upgrades.
+- Reads the corrected production plan.
+- Selects gameplay through Clip Brain.
+- Searches/downloads sounds only for:
+  - interactive guessing;
+  - sound replacement;
+  - meme edit when the plan explicitly enables a soundboard.
+- Does not attach random sounds to fact/story/caption videos.
+- Creates a normal Creator AI project JSON.
+- Redirects to the Creator AI review page.
+- Shows exact missing inputs.
+- Keeps narrated formats as `NEEDS_ASSETS` until script, voiceover, caption and
+  visual-insert generation exist.
+- Only existing renderer-ready formats can become `AUTO_READY`.
+
+## Expected output
+
+```text
+outputs/creator_projects/reference_<video-name>.json
+```
+
+Narrated fact/list example:
+
+```text
+Status: NEEDS_ASSETS
+Missing:
+- original verified fact/list script
+- AI voice or human voice selection
+- timed captions
+- relevant image/meme inserts for each fact
+```
