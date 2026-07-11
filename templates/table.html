@@ -1,0 +1,6 @@
+<table><tr><th>Video</th><th>Scores</th><th>Production</th><th>Auto Studio</th><th>DNA</th></tr>
+{% for v in videos %}<tr><td><b>{{v.title}}</b><br><a href='{{v.url}}' target='_blank'>Open Short</a><br><span class='muted'>{{v.channel_title}} • {{'{:,}'.format(v.view_count or 0)}} views • {{'{:,}'.format(v.subscriber_count or 0)}} subs</span></td>
+<td><div class='score'>{{v.opportunity_score}}</div><span class='muted'>opportunity</span><br>Prod {{v.production_score}} / Auto {{v.auto_recreate_score}}</td>
+<td><span class='pill {{"make" if v.production_verdict=="MAKE" else "review" if v.production_verdict=="REVIEW" else "skip"}}'>{{v.production_verdict}}</span><br><span class='small'>{{v.why_make}}</span><br><span class='muted small'>Missing: {{v.missing_skills}}</span></td>
+<td><span class='pill {{"auto" if v.auto_recreate_verdict=="AUTO CREATE" else "review" if v.auto_recreate_verdict=="NEEDS ASSETS" else "skip"}}'>{{v.auto_recreate_verdict}}</span><br><span class='small'>Template: {{v.template_type}}</span><br><span class='muted small'>Needs: {{v.missing_assets}}</span></td>
+<td><span class='mono small'>{{v.viral_dna}}</span><br><span class='muted small'>Titles: {{v.title_variants}}</span></td></tr>{% endfor %}</table>

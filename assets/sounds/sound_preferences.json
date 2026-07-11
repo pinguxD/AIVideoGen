@@ -1,0 +1,50 @@
+{
+  "freesound_686107": {
+    "rating": -5,
+    "blocked": true,
+    "approved": 0,
+    "rejected": 1,
+    "contexts_good": {},
+    "contexts_bad": {}
+  },
+  "freesound_398254": {
+    "rating": 1,
+    "blocked": false,
+    "approved": 1,
+    "rejected": 0,
+    "contexts_good": {
+      "guess_voice": 1
+    },
+    "contexts_bad": {}
+  },
+  "freesound_315795": {
+    "rating": 1,
+    "blocked": false,
+    "approved": 1,
+    "rejected": 0,
+    "contexts_good": {
+      "guess_voice": 1
+    },
+    "contexts_bad": {}
+  },
+  "freesound_132874": {
+    "rating": 1,
+    "blocked": false,
+    "approved": 1,
+    "rejected": 0,
+    "contexts_good": {
+      "guess_voice": 1
+    },
+    "contexts_bad": {}
+  },
+  "freesound_75143": {
+    "rating": 1,
+    "blocked": false,
+    "approved": 1,
+    "rejected": 0,
+    "contexts_good": {
+      "guess_voice": 1
+    },
+    "contexts_bad": {}
+  }
+}

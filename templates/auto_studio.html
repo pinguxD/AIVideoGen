@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Auto Studio</h1>
+<div class='card'><h2>Asset status</h2>
+<p>Source clips/images: <b>{{assets.source}}</b> • Sounds: <b>{{assets.sounds}}</b> • Raw gameplay: <b>{{assets.raw_gameplay}}</b></p>
+<p class='muted'>Put full recordings in <span class='mono'>assets/raw_gameplay/</span>. Run <span class='mono'>py mine_gameplay.py</span> to let AI cut reusable clips into <span class='mono'>assets/source/mined/</span>.</p>
+</div>
+<div class='card'><h2>✅ Can generate now</h2>{% set videos = videos|selectattr('auto_recreate_verdict','equalto','AUTO CREATE')|list %}{% include 'table.html' %}</div>
+<div class='card'><h2>🟡 Needs assets</h2><p class='muted'>These are good formats, but Auto Studio needs one or two assets first.</p>{% set videos = videos|selectattr('auto_recreate_verdict','equalto','NEEDS ASSETS')|list %}{% include 'table.html' %}</div>
+<div class='card'><h2>❌ Manual only / review</h2>{% set videos = videos|selectattr('auto_recreate_verdict','equalto','MANUAL ONLY')|list %}{% include 'table.html' %}</div>
+{% endblock %}

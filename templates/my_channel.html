@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block content %}
+<h1>My Channel Analysis</h1>
+<div class="card">
+  <p><b>Channel:</b> {{config.my_channel_url}}</p>
+  <p>This page now imports your public channel data automatically. No manual input needed.</p>
+  <p><small>Public API data only: views, likes, comments, duration, title, publish date. Studio-only metrics like retention/swipe-away/subscribers gained can be added later via export/OAuth.</small></p>
+</div>
+<div class="card">
+  <h2>Summary</h2>
+  <pre style="white-space:pre-wrap">{{my_summary}}</pre>
+</div>
+<div class="card">
+  <h2>Your Latest Imported Videos</h2>
+  <table><tr><th>Title</th><th>Views</th><th>Likes</th><th>Comments</th><th>Format</th><th>Views/day</th></tr>
+  {% for r in my_videos[:50] %}
+  <tr><td><a href="{{r.shorts_url}}" target="_blank">{{r.title}}</a></td><td>{{r.views}}</td><td>{{r.likes}}</td><td>{{r.comments}}</td><td>{{r.format_type}}</td><td>{{r.views_per_day}}</td></tr>
+  {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Asset Library</h1>
+<div class='grid'>
+  <div class='stat'><div class='muted'>Source clips/images</div><div class='score'>{{assets.source}}</div></div>
+  <div class='stat'><div class='muted'>Sounds</div><div class='score'>{{assets.sounds}}</div></div>
+  <div class='stat'><div class='muted'>Raw gameplay files</div><div class='score'>{{assets.raw_gameplay}}</div></div>
+  <div class='stat'><div class='muted'>Mined clips</div><div class='score'>{{mined_count}}</div></div>
+</div>
+<div class='card'><h2>Where to put things</h2>
+<ul>
+<li><b>Long recordings:</b> <span class='mono'>assets/raw_gameplay/</span></li>
+<li><b>Reusable clips/images:</b> <span class='mono'>assets/source/</span></li>
+<li><b>Reusable sounds:</b> <span class='mono'>assets/sounds/</span></li>
+</ul>
+<p class='muted'>To mine long recordings manually, run: <span class='mono'>py mine_gameplay.py</span>. Or set <span class='mono'>MINE_RAW_GAMEPLAY=true</span> in .env.</p></div>
+<div class='card'><h2>Source assets</h2><table><tr><th>File</th></tr>{% for f in assets.source_files %}<tr><td class='mono'>{{f}}</td></tr>{% endfor %}</table></div>
+<div class='card'><h2>Sound assets</h2><table><tr><th>File</th></tr>{% for f in assets.sound_files %}<tr><td class='mono'>{{f}}</td></tr>{% endfor %}</table></div>
+<div class='card'><h2>Raw gameplay</h2><table><tr><th>File</th></tr>{% for f in assets.raw_files %}<tr><td class='mono'>{{f}}</td></tr>{% endfor %}</table></div>
+{% endblock %}

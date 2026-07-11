@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Sound Finder</h1>
+<div class='card'>
+  <h2>Sound status</h2>
+  <p>Local sounds: <b>{{assets.sounds}}</b></p>
+  <p class='muted'>The app does not blindly steal sounds. It finds likely sound needs and gives search links. Download only sounds you are allowed to reuse, then put them in <span class='mono'>assets/sounds/</span>.</p>
+</div>
+<div class='card'>
+  <h2>Suggested sounds to collect</h2>
+  <table><tr><th>Sound</th><th>Needed by projects</th><th>Risk</th><th>Search</th><th>Notes</th></tr>
+  {% for r in sounds %}
+    <tr><td><b>{{r.sound}}</b></td><td>{{r.needed_by_projects}}</td><td>{{r.copyright_risk}}</td><td><a href='{{r.pixabay}}'>Pixabay</a> · <a href='{{r.freesound}}'>Freesound</a> · <a href='{{r.myinstants}}'>MyInstants</a></td><td class='small muted'>{{r.notes}}</td></tr>
+  {% endfor %}
+  </table>
+</div>
+{% endblock %}
