@@ -1,39 +1,38 @@
-# Video Intelligence direct source files
+# Human Analysis Correction System
 
-This package contains direct replacement source files — no installer.
+This is the next layer for Full Video Intelligence.
 
-Copy these into your project:
+It allows you to correct:
 
-- `radar/scanner.py`
-- `radar/scoring.py`
-- `radar/classification_feedback.py`
-- `radar/classification_web.py`
+- overall format;
+- hook type;
+- video goal;
+- main emotion;
+- ending type;
+- human/AI/no voice;
+- voice style;
+- caption style;
+- meme usage;
+- sound usage;
+- exact timeline events such as memes, sounds, zooms, captions and reveals.
 
-Keep your existing:
+Every correction is stored permanently in:
 
-- `radar/video_intelligence.py`
-- `assets/`
-- `outputs/`
-- `.env`
-
-Then follow `APP_INTEGRATION.md` for the two small `app.py` edits.
-
-## What changes
-
-- YouTube tags are saved.
-- Scanner calls `enrich_video()`.
-- Old keyword scoring respects Video Intelligence output.
-- Low-confidence classifications remain in `trend_report.csv`.
-- Low-confidence classifications are excluded from `final_opportunities.csv`.
-- Creator AI therefore only receives accepted/corrected classifications.
-- Manual corrections persist in `outputs/video_classification.db`.
-- Classification Review explains confidence and evidence.
-
-## Git commands
-
-```bash
-git checkout -b feature/video-intelligence
-git add radar/scanner.py radar/scoring.py radar/classification_feedback.py radar/classification_web.py app.py
-git commit -m "Integrate confidence-based video intelligence"
-git push -u origin feature/video-intelligence
+```text
+outputs/analysis_feedback.db
 ```
+
+It also generates corrected copies of the analyzer output and production plan:
+
+```text
+outputs/corrected_reference_analysis/
+```
+
+This is important because the correction is not only displayed in the website.
+It changes the downstream production plan. A fact/list correction, for example,
+turns off soundboard selection so Creator AI cannot turn it into a Guess Voice
+project again.
+
+The learning-statistics table shows how many corrected examples exist for each
+label. These become the training/calibration dataset for future classifier/model
+upgrades.

@@ -1,85 +1,80 @@
-# APP.PY INTEGRATION — two direct edits
+# Analysis Correction System integration
 
-Your source modules are ready after copying the `radar` folder.
+## Required previous modules
 
-## 1. Add the navigation item
+The following modules must already exist:
 
-Find `NAV_ITEMS = [` near the top of `app.py`.
-
-Add this entry near Creator AI:
-
-```python
-("/classification-review", "Classification Review"),
+```text
+radar/full_video_analyzer.py
+radar/production_planner.py
+radar/reference_library.py
 ```
 
-For example:
+## Copy these new files
 
-```python
-NAV_ITEMS = [
-    ("/studio", "Studio"),
-    ("/clips", "Clip Review"),
-    ("/recommendations", "Recommended Shorts"),
-    ("/auto-studio", "Auto Studio"),
-    ("/creator-ai", "Creator AI"),
-    ("/classification-review", "Classification Review"),
-    ...
-]
+```text
+radar/analysis_feedback.py
+radar/analysis_review.py
+radar/analysis_review_web.py
 ```
 
-## 2. Register the routes
+## Add navigation
 
-Near the bottom of `app.py`, immediately before the Creator AI route registration,
-add:
+In `app.py`, add:
 
 ```python
-from radar.classification_web import register_classification_routes
-
-register_classification_routes(
-    app,
-    BASE,
-    page,
-    esc,
-    load_recommendations,
-)
+("/analysis-review", "Analysis Review"),
 ```
 
-The end of the file should look roughly like:
+A sensible location:
 
 ```python
-from radar.channel_web import register_channel_routes
-register_channel_routes(app, page, esc)
+("/reference-queue", "Reference Queue"),
+("/analysis-review", "Analysis Review"),
+("/sound-library", "Sound Library"),
+```
 
-from radar.classification_web import register_classification_routes
-register_classification_routes(
-    app,
-    BASE,
-    page,
-    esc,
-    load_recommendations,
-)
+## Register routes
 
-from radar.creator_web import register_creator_routes
-register_creator_routes(
+Near the bottom of `app.py`:
+
+```python
+from radar.analysis_review_web import register_analysis_review_routes
+
+register_analysis_review_routes(
     app,
-    BASE,
     page,
-    render_stats,
-    load_recommendations,
     esc,
 )
 ```
 
-## 3. Run
+## Start
 
 ```powershell
-py trend_radar.py
 py app.py
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:5000/classification-review
+http://127.0.0.1:5000/analysis-review
 ```
 
-Correct uncertain videos, then rerun `py trend_radar.py`.
+## What gets stored
+
+Corrections database:
+
+```text
+outputs/analysis_feedback.db
+```
+
+Corrected outputs:
+
+```text
+outputs/corrected_reference_analysis/
+├── <reference>.corrected.analysis.json
+└── <reference>.corrected.plan.json
+```
+
+The corrected production plan explicitly overrides incompatible automatic choices.
+For example, correcting a video to `narrated_fact_list` forces `soundboard = false`.

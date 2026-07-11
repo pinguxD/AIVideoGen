@@ -42,6 +42,8 @@ NAV_ITEMS = [
     ("/learning", "🧠 AI Learning"),
     ("/my-channel", "📈 My Channel"),
     ("/diagnostics", "Diagnostics"),
+    ("/reference-queue", "Reference Queue"),
+    ("/analysis-review", "Analysis Review"),
 ]
 
 
@@ -622,7 +624,14 @@ def old_site_redirect(path: str):
     }
     return redirect(mapping.get(name, "/studio"))
 
+from radar.reference_web import register_reference_routes
 
+register_reference_routes(
+    app,
+    BASE,
+    page,
+    esc,
+)
 
 # Creator AI routes
 from radar.channel_web import register_channel_routes
@@ -636,3 +645,11 @@ if __name__ == "__main__":
     start_background_sync()
     print("Open http://127.0.0.1:5000/studio")
     app.run(debug=False)
+
+from radar.analysis_review_web import register_analysis_review_routes
+
+register_analysis_review_routes(
+    app,
+    page,
+    esc,
+)
