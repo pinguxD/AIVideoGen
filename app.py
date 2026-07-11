@@ -5,7 +5,9 @@ from pathlib import Path
 from urllib.parse import unquote
 import html
 import pandas as pd
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 
 # Always resolve paths from the project folder, not from wherever the terminal happens to be.
@@ -45,6 +47,7 @@ NAV_ITEMS = [
     ("/reference-queue", "Reference Queue"),
     ("/analysis-review", "Analysis Review"),
     ("/recreation-lab", "Roblox Recreation Lab"),
+    ("/audio-autopilot", "Audio Intelligence Autopilot"),
 ]
 
 
@@ -655,6 +658,15 @@ register_recreation_routes(
     page,
     esc,
 )
+
+from radar.audio_autopilot_web import register_audio_autopilot_routes
+
+register_audio_autopilot_routes(
+    app,
+    page,
+    esc,
+)
+
 if __name__ == "__main__":
     from radar.channel_feedback import start_background_sync
     start_background_sync()
