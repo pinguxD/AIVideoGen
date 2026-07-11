@@ -49,6 +49,8 @@ NAV_ITEMS = [
     ("/recreation-lab", "Roblox Recreation Lab"),
     ("/audio-autopilot", "Audio Intelligence Autopilot"),
     ("/roblox-generation", "Roblox Studio Generation"),
+    ("/roblox-plugin", "Roblox Studio Plugin Bridge"),
+    ("/roblox-brain", "Roblox Brain"),
 ]
 
 
@@ -670,6 +672,20 @@ register_audio_autopilot_routes(
 from radar.roblox_generation_web import register_roblox_generation_routes
 
 register_roblox_generation_routes(
+    app,
+    page,
+    esc,
+)
+from radar.roblox_plugin_web import register_roblox_plugin_routes
+
+register_roblox_plugin_routes(
+    app,
+    page,
+    esc,
+)
+from radar.roblox_brain_web import register_roblox_brain_routes
+
+register_roblox_brain_routes(
     app,
     page,
     esc,
