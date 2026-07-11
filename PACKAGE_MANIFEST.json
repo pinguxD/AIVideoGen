@@ -1,0 +1,8 @@
+{
+  "name": "roblox_scene_builder_part3A",
+  "files": [
+    "radar/scene_builder_engine.py",
+    "radar/scene_builder_web.py",
+    "PART3A_SETUP.md"
+  ]
+}
