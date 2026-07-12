@@ -1,0 +1,10 @@
+{
+  "name": "Story Scout v1.2 strict",
+  "changes": [
+    "Gaming-category search",
+    "Strict language metadata filter",
+    "Strict local English fallback",
+    "Game must be proven by video metadata, not query",
+    "Rejected candidates hidden permanently"
+  ]
+}

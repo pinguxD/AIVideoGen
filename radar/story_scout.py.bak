@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import math
@@ -125,12 +125,7 @@ def list_candidates(
     status: str = "",
     limit: int = 300,
 ) -> list[StoryCandidate]:
-    candidates = []
-    for row in _load_rows():
-        row.setdefault("api_language", "")
-        row.setdefault("english_confidence", 0)
-        row.setdefault("detected_game", "")
-        candidates.append(StoryCandidate(**row))
+    candidates = [StoryCandidate(**row) for row in _load_rows()]
     if status:
         candidates = [
             item
@@ -171,10 +166,10 @@ ENGLISH_STOPWORDS = {
 NON_ENGLISH_MARKERS = {
     "historia", "historias", "juego", "jugando", "mientras", "porque", "cuando",
     "pero", "esto", "esta", "como", "para", "parte", "amigo", "escuela",
-    "histoire", "jeu", "joueur", "quand", "pourquoi", "avec", "mais", "Ã©cole",
+    "histoire", "jeu", "joueur", "quand", "pourquoi", "avec", "mais", "école",
     "geschichte", "spiel", "spieler", "warum", "aber", "mit", "schule",
-    "storia", "gioco", "perchÃ©", "quando", "con", "scuola",
-    "histÃ³ria", "jogo", "quando", "com", "escola",
+    "storia", "gioco", "perché", "quando", "con", "scuola",
+    "história", "jogo", "quando", "com", "escola",
     "cerita", "permainan", "kisah", "sekolah",
     "hikaye", "oyun", "okul",
     "verhaal", "spel", "schoolverhaal",
@@ -182,7 +177,7 @@ NON_ENGLISH_MARKERS = {
 
 
 def _word_tokens(text: str) -> list[str]:
-    return re.findall(r"[A-Za-zÃ€-Ã–Ã˜-Ã¶Ã¸-Ã¿']+", str(text or "").lower())
+    return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ']+", str(text or "").lower())
 
 
 def _api_language(item: dict[str, Any]) -> str:
@@ -372,7 +367,7 @@ def _score_candidate(
         reasons.append(f"Strong velocity: {views_per_day:,}/day")
     if views_to_subs >= 10:
         reasons.append(
-            f"Breakout: {views_to_subs:.1f}Ã— channel subscribers"
+            f"Breakout: {views_to_subs:.1f}× channel subscribers"
         )
     if engagement_rate >= 4:
         reasons.append(f"{engagement_rate:.1f}% interaction rate")
@@ -635,4 +630,3 @@ def scout_stats() -> dict[str, int]:
         if key in counts:
             counts[key] += 1
     return counts
-

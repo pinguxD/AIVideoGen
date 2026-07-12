@@ -118,7 +118,7 @@ def register_story_scout_routes(app, page, esc) -> None:
                         · <b>Opportunity:</b> {esc(item.opportunity_score)}
                         · <b>Viral:</b> {esc(item.viral_score)}
                         · <b>Story:</b> {esc(item.storytelling_score)}
-                        · <b>Gaming:</b> {esc(item.gaming_background_score)} · <b>English:</b> {esc(item.english_confidence)}% · <b>Game:</b> {esc(item.detected_game or 'unknown')}
+                        · <b>Gaming:</b> {esc(item.gaming_background_score)} · <b>English:</b> {esc(item.english_confidence)}% · <b>Game:</b> {esc(item.detected_game or 'unknown')} · <b>API language:</b> {esc(item.api_language or 'not supplied')}
                       </p>
                       <p>
                         Engagement: {esc(item.engagement_rate)}%
@@ -160,7 +160,7 @@ def register_story_scout_routes(app, page, esc) -> None:
         <div class="card">
           <h2>Find current viral storytelling Shorts</h2>
           <p>
-            Searches only English storytelling Shorts using Roblox or Minecraft background gameplay. Results are filtered twice: YouTube relevance language plus a local English-language and game-specific check.
+            Searches only Gaming-category Shorts whose own metadata identifies Roblox or Minecraft. Explicit non-English language metadata is rejected, and videos without language metadata must pass a strict local English check.
           </p>
           <form method="post" action="/story-scout/scan">
             <div class="grid">
@@ -211,7 +211,7 @@ def register_story_scout_routes(app, page, esc) -> None:
           <a class="btn" href="/story-scout?status=NEW">Needs Review</a>
           <a class="btn" href="/story-scout?status=APPROVED">Approved</a>
           <a class="btn" href="/story-scout?status=IMPORTED">Imported</a>
-          <a class="btn" href="/story-scout?status=REJECTED">Rejected</a>
+          
         </div>
 
         {"".join(cards) or '<div class="card">No candidates found yet.</div>'}

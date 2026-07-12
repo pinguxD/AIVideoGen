@@ -21,6 +21,7 @@ class YouTubeClient:
         max_results=25,
         region='US',
         relevance_language='en',
+        video_category_id='20',
     ):
         after=(datetime.now(timezone.utc)-timedelta(days=days_back)).isoformat().replace('+00:00','Z')
         request = dict(
@@ -31,9 +32,13 @@ class YouTubeClient:
             order='viewCount',
             publishedAfter=after,
             regionCode=region,
+            safeSearch='strict',
+            videoDuration='short',
         )
         if relevance_language:
             request['relevanceLanguage'] = relevance_language
+        if video_category_id:
+            request['videoCategoryId'] = video_category_id
         res=self.yt.search().list(**request).execute()
         return res.get('items',[])
     def enrich(self, items):
@@ -61,6 +66,10 @@ class YouTubeClient:
                     'video_id':v['id'], 'title':sn.get('title',''), 'description':sn.get('description',''),
                     'url':f'https://www.youtube.com/shorts/{v["id"]}', 'channel_id':sn['channelId'], 'channel_title':sn.get('channelTitle',''),
                     'subscriber_count':subs, 'view_count':int(st.get('viewCount',0) or 0), 'like_count':int(st.get('likeCount',0) or 0), 'comment_count':int(st.get('commentCount',0) or 0),
-                    'published_at':sn.get('publishedAt',''), 'age_days':round(age,2), 'duration_seconds':iso_duration_seconds(cd.get('duration',''))
+                    'published_at':sn.get('publishedAt',''), 'age_days':round(age,2), 'duration_seconds':iso_duration_seconds(cd.get('duration','')),
+                    'default_language':sn.get('defaultLanguage',''),
+                    'default_audio_language':sn.get('defaultAudioLanguage',''),
+                    'tags':sn.get('tags',[]) or [],
+                    'category_id':sn.get('categoryId',''),
                 })
         return out
